@@ -61,7 +61,7 @@ Primeiro, crie as seguintes tags no seu Chatwoot:
 
 Crie um atributo personalizado chamado **`last_message`** no Chatwoot:
 
-![Atributo Personalizado](https://row.viniads.com.br/media/user_files/Nw4BTiT4kKenmtJDEITuEjC7vu48lcyO_b6cfc1603c80b743fb282dcc678295fc96782dd2f39de083993e27b7dbb28389.png)
+![Atributo Personalizado](https://row.viniads.com.br/media/user_files/2p8czxdtoGSder0ZBKx4AcNT9ZfSokiV_28e4bb8eb17377fe2d7814d37b501e81079d5dc661ab902586bdad44eedd8ffe.png)
 
 **Configurações:**
 - **Nome:** `last_message`
