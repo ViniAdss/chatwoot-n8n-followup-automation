@@ -56,27 +56,21 @@
               "type": "string"
             },
             {
-              "id": "ea0c7cd0-bb3b-4199-9c20-6514b343ab1b",
-              "name": "tags",
-              "value": "={{ $json.labels.toJsonString() }}",
-              "type": "string"
-            },
-            {
               "id": "86496a0a-27e7-485e-949e-eece7c83694e",
               "name": "baseUrl",
-              "value": "https://evo.viniads.com.br/",
+              "value": "seu-endereço-evolution",
               "type": "string"
             },
             {
               "id": "e3a31337-0d41-436c-aa48-a48d03ce9616",
               "name": "Instance",
-              "value": "ViniAds",
+              "value": "sua-instancia",
               "type": "string"
             },
             {
               "id": "c4e0eb7f-06af-4a17-a11d-c770f96a536a",
               "name": "apikey",
-              "value": "11509D174BDD-49ED-BCE8-7030D0505FCC",
+              "value": "sua-chave-api",
               "type": "string"
             }
           ]
@@ -165,7 +159,7 @@
             {
               "id": "4d07ace9-888e-4ee2-9154-c775fdc302c1",
               "leftValue": "={{ $json.phone }}",
-              "rightValue": "=5535998369983",
+              "rightValue": "=55seunumero",
               "operator": {
                 "type": "string",
                 "operation": "equals"
@@ -737,7 +731,7 @@
                 "conditions": [
                   {
                     "leftValue": "={{ $json.last_message }}",
-                    "rightValue": "={{ $json.datetimeNow.toDateTime().minus(5, 'minutes') }}",
+                    "rightValue": "={{ $json.datetimeNow.toDateTime().minus(10, 'minutes') }}",
                     "operator": {
                       "type": "dateTime",
                       "operation": "equals"
@@ -762,7 +756,7 @@
                   {
                     "id": "ba093609-68ad-40c8-8c28-0d71340a9eeb",
                     "leftValue": "={{ $json.last_message }}",
-                    "rightValue": "={{ $json.datetimeNow.toDateTime().minus(10, 'minutes') }}",
+                    "rightValue": "={{ $json.datetimeNow.toDateTime().minus(5, 'hours') }}",
                     "operator": {
                       "type": "dateTime",
                       "operation": "equals"
@@ -786,7 +780,7 @@
                   {
                     "id": "de0411d7-0feb-47c5-b17d-feec5bac45db",
                     "leftValue": "={{ $json.last_message }}",
-                    "rightValue": "={{ $json.datetimeNow.toDateTime().minus(30, 'minutes') }}",
+                    "rightValue": "={{ $json.datetimeNow.toDateTime().minus(1, 'days') }}",
                     "operator": {
                       "type": "dateTime",
                       "operation": "equals"
@@ -810,7 +804,7 @@
                   {
                     "id": "3790eb95-f8a7-422e-9321-a9ccbf3e0e31",
                     "leftValue": "={{ $json.last_message }}",
-                    "rightValue": "={{ $json.datetimeNow.toDateTime().minus(1, 'hours') }}",
+                    "rightValue": "={{ $json.datetimeNow.toDateTime().minus(3, 'days') }}",
                     "operator": {
                       "type": "dateTime",
                       "operation": "equals"
@@ -1156,7 +1150,7 @@
     },
     {
       "parameters": {
-        "content": "# Normalização\n\nEsse conjunto de nós tem as seguintes funções:\n\n1. **Normalizar as informações** que chegam do chatwoot.\n2. **Consultar as tags** associadas a cada conversa.\n3. **Unir essas informações** em um único item para ser enviado ao loop.",
+        "content": "# Normalização\n\nEsse conjunto de nós tem as seguintes funções:\n\n1. **Normalizar as informações** que chegam do chatwoot.\n2. **Consultar as tags** associadas a cada conversa.\n3. **Unir essas informações** em um único item para ser enviado ao loop.\n\nObs: Coloque suas credenciais da Evolution API aqui no nó **_normalize_**",
         "height": 656,
         "width": 432,
         "color": 7
@@ -1232,8 +1226,7 @@
       ],
       "id": "5e852e82-d921-404a-95d8-935dd3cdc562",
       "name": "seu webhook",
-      "webhookId": "10a7bf6d-4c2f-4829-bcec-ed801e78d32a",
-      "disabled": true
+      "webhookId": "10a7bf6d-4c2f-4829-bcec-ed801e78d32a"
     },
     {
       "parameters": {
@@ -1311,7 +1304,7 @@
     {
       "parameters": {
         "content": "# Configurando os nós no workflow do seu agente\n\nEssa seção demonstra como você deve configurar os nós no seu workflow principal, onde fica seu agente de atendimento.\n\nO objetivo aqui é criar um mecanismo para **registrar a data e a hora da última mensagem** do lead.\n\nPara isso voce irá precisar:\n\n1. Ajustar o nó de normalização que coleta os dados do seu webhook. Adicione as informações do nó **_seu-node-de-normalização_** no seu.\n2. Criar o atributo personalizado **_last_message_** no seu Chatwoot.\n3. Copiar esses três nós da seção \"_Registra última mensagem do lead_\" e colocar no seu fluxo, conforme mostrado aqui.\n\n:white_check_mark: Perceba que esses três nós estão conectados apenas ao nó de normalização, então ela não irá afetar o restante do seu workflow.\n\n:warning: Não se esqueça de criar o atributo personalizado chamado **_last_message_** no seu Chatwoot",
-        "height": 1248,
+        "height": 1200,
         "width": 2048,
         "color": 7
       },
@@ -1352,12 +1345,12 @@
             "content-length": "1019",
             "accept-encoding": "gzip, compress, deflate, br",
             "content-type": "application/json",
-            "x-forwarded-for": "172.18.0.1",
+            "x-forwarded-for": "redacted",
             "x-forwarded-host": "webhooks.viniads.com.br",
             "x-forwarded-port": "443",
             "x-forwarded-proto": "https",
-            "x-forwarded-server": "cdf85c644557",
-            "x-real-ip": "172.18.0.1"
+            "x-forwarded-server": "redacted",
+            "x-real-ip": "redacted"
           },
           "params": {},
           "query": {},
@@ -1399,7 +1392,7 @@
             "date_time": "2025-08-06T06:30:48.697Z",
             "sender": "559182824185@s.whatsapp.net",
             "server_url": "https://evo.viniads.com.br",
-            "apikey": "11509D174BDD-49ED-BCE8-7030D0505FCC"
+            "apikey": "redacted"
           },
           "webhookUrl": "https://webhooks.viniads.com.br/webhook/evo/messages-upsert",
           "executionMode": "production"
@@ -1915,13 +1908,18 @@
           }
         ]
       ]
+    },
+    "last_message": {
+      "main": [
+        []
+      ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "1320e4ca-04a3-4b0a-99c1-58f327c6d8b0",
+  "versionId": "61b2fbf2-2a4e-46be-8254-d0c21ab4a5b9",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "99fad291a5fe401d501e4f538a199fb57b08c7e3ec314354326b3244a970e2a7"
