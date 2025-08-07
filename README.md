@@ -72,7 +72,9 @@ Crie um atributo personalizado chamado **`last_message`** no Chatwoot:
 
 Execute o workflow auxiliar para identificar o ID da sua caixa de entrada do WhatsApp:
 
-![Caixas de Entrada](https://row.viniads.com.br/media/user_files/FbhLghtct37hLq4c0tMi5JdD8NGgv4gV_a4e15a051654c6963a28475150726b1b66855b8dec8a1a7a95cb3f91eb6a9efe.png)
+![Caixas de Entrada](https://row.viniads.com.br/media/user_files/Ss9J0EqZHIueREX5J65AjkBY6slJJ1eE_1ca02f8c0246b292311387d5039c091f4b7ca9f38d4b4591eb5fdf8bf51ed22c.png)
+
+![Filtros](https://row.viniads.com.br/media/user_files/FbhLghtct37hLq4c0tMi5JdD8NGgv4gV_a4e15a051654c6963a28475150726b1b66855b8dec8a1a7a95cb3f91eb6a9efe.png)
 
 1. Execute o nó **manual** → **caixas_de_entrada**
 2. Localize sua caixa de entrada da Evolution
