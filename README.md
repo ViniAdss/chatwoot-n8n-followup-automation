@@ -22,7 +22,7 @@ Antes de começar, você precisa ter:
 - **n8n** instalado e configurado
 - **Chatwoot** v4.1+ (compatível com versões anteriores)
 - **Evolution API** configurada
-- **PostgreSQL** (para histórico de conversas)
+- **PostgreSQL(Supabase)** (para histórico de conversas)
 - **OpenAI API** ou outro provedor LLM
 - Acesso às credenciais de todas as integrações
 
@@ -35,8 +35,9 @@ git clone https://github.com/ViniAdss/chatwoot-n8n-followup-automation.git
 
 ### 2. Importe o workflow no n8n
 - Abra seu n8n
+- Crie um novo WorkFlow
 - Vá em **Settings → Import from file**
-- Selecione o arquivo `Follow-Up.json`
+- Selecione o arquivo `Follow-Up.json` na pasta do projeto que voce acabou de baixar
 
 ### 3. Configure as credenciais
 **⚠️ IMPORTANTE:** Você deve abrir cada nó e configurar suas próprias credenciais antes de executar o workflow.
@@ -76,10 +77,11 @@ Execute o workflow auxiliar para identificar o ID da sua caixa de entrada do Wha
 1. Execute o nó **manual** → **caixas_de_entrada**
 2. Localize sua caixa de entrada da Evolution
 3. Copie o **ID** da caixa de entrada
+4. Cole o ID no filtro do nó `filtra_tag&inbox`
 
 ### 🔧 4. Configurando Credenciais nos Nós
 
-#### Evolution API (nó `normalize`)
+#### Colocando suas credenciais da Evolution API (nó `normalize`)
 ```javascript
 baseUrl: "https://sua-evolution-api.com/"
 Instance: "SuaInstancia"  
@@ -87,16 +89,16 @@ apikey: "sua-api-key-evolution"
 ```
 
 #### Chatwoot
-- Configure suas credenciais do Chatwoot nos nós `filtra_tag&inbox`
-- Configure o **ID da caixa de entrada** encontrado no passo anterior
+- Configure suas credenciais do Chatwoot nos nós `filtra_tag&inbox`, `getTags` e nos nós `tag`.
+- Configure o **ID da caixa de entrada** encontrado no nó `caixas_de_entrada`
 
 #### OpenAI/LLM
 - Configure suas credenciais nos nós dos agentes
 - Escolha o modelo de sua preferência (padrão: GPT-4o-mini)
 
-#### PostgreSQL  
+#### PostgreSQL(Supabase)  
 - Configure a conexão para armazenar histórico de conversas
-- Nenhum requisito específico de versão
+- Defina quantas mensagens do histórico os agentes terão acesso
 
 ### ⏱️ 5. Configurando Intervalos de Follow-up
 
@@ -105,15 +107,17 @@ No nó **`switch`**, você pode personalizar os intervalos de cada follow-up:
 ![Configuração Switch](https://row.viniads.com.br/media/user_files/eV5ygIRb3K5jMTCj7yiZGsMFaxr0Cp1s_b58b2d6477be8802a9f800c6b87e387f915524d93f4dd9f88dc212d86b96ac2a.png)
 
 **Padrão atual:**
-- **Follow-up 1:** 5 minutos após última mensagem
-- **Follow-up 2:** 10 minutos após última mensagem  
-- **Follow-up 3:** 30 minutos após última mensagem
-- **Follow-up 4:** 1 hora após última mensagem
+- **Follow-up 1:** 10 minutos após última mensagem
+- **Follow-up 2:** 5 horas após última mensagem  
+- **Follow-up 3:** 1 dia após última mensagem
+- **Follow-up 4:** 3 dias após última mensagem
 
 **Para alterar um intervalo:**
+Altere a função `minus()` com o valor e a unidade de tempo. Veja o exemplo:
+
 ```javascript
-// Exemplo: alterar para 30 minutos
-{{ $json.datetimeNow.toDateTime().minus(30, 'minutes') }}
+// Exemplo: alterar para 12 horas
+{{ $json.datetimeNow.toDateTime().minus(12, 'hours') }}
 
 // Unidades disponíveis: 'minutes', 'hours', 'days'
 ```
@@ -128,6 +132,7 @@ Você é um assistente comercial especializado em follow-up.
 Analise o histórico da conversa e crie uma mensagem personalizada 
 e amigável para reengajar o lead. 
 Seja natural, empático e focado em ajudar o cliente.
+Retorne em seu output apenas a mensagem de follow-up
 ```
 
 **Conexão com histórico:**
@@ -144,10 +149,10 @@ Durante os testes, use o nó **`isMe`** para filtrar apenas seu número:
 3. **REMOVA** este nó ao colocar em produção
 
 ### 🔄 Executando Testes
-1. Configure o **Schedule Trigger** para executar a cada 1 minuto
+1. Configure o **Schedule Trigger** para executar a cada 1 minuto(já está configurado assim por padrão)
 2. Envie uma mensagem de teste no WhatsApp
 3. Aguarde os intervalos configurados
-4. Verifique se as tags estão sendo aplicadas corretamente
+4. Verifique se as tags estão sendo aplicadas corretamente no chatwoot
 
 ## 📁 Scripts Auxiliares
 
@@ -155,12 +160,12 @@ Durante os testes, use o nó **`isMe`** para filtrar apenas seu número:
 Ajusta mensagens enviadas fora do horário comercial (21h-07h) para serem reagendadas para 07h do próximo dia útil.
 
 ### `setTags.js` 
-Script base para gerenciamento de tags, usado nos nós `setTags_1-4`:
+Script base para gerenciamento de tags, usado nos nós `setTags_1-4`. Voce pode alterar dentro do código as tags que deseja adicionar ou remover. Veja exemplo:
 
 ```javascript
 // 🔧 Configure as tags desejadas:
 const tagsParaAdicionar = ['follow-up-1'];  // ✅ Adicionar
-const tagsParaRemover = [''];               // ❌ Remover
+const tagsParaRemover = ['novo-contato'];   // ❌ Remover
 ```
 
 ### `filtraSeteDias.js`
@@ -174,12 +179,12 @@ graph TD
     B --> C[Filtrar WhatsApp]
     C --> D[Normalizar Dados]
     D --> E[Loop por Leads]
-    E --> F[Verificar Timing]
+    E --> F[Verificar JSON de Entrada]
     F --> G{Switch por Tempo}
-    G -->|5min| H[Follow-up 1]
-    G -->|10min| I[Follow-up 2] 
-    G -->|30min| J[Follow-up 3]
-    G -->|1h| K[Follow-up 4]
+    G -->|10min| H[Follow-up 1]
+    G -->|5h| I[Follow-up 2] 
+    G -->|1d| J[Follow-up 3]
+    G -->|3d| K[Follow-up 4]
     H --> L[Gerar Mensagem IA]
     I --> L
     J --> L  
@@ -196,19 +201,21 @@ Para integrar com seu workflow de atendimento existente:
 Adicione ao seu nó de normalização:
 ```javascript
 // Campos obrigatórios para o follow-up
-conversationId: "{{ $json.body.data.chatwootConversationId }}"
-date: "{{ $json.body.data.date_time.replace('Z', '-03:00') }}"
-fromMe: "{{ $json.body.data.key.fromMe }}"
+conversationId: "{{ $json.body.data.chatwootConversationId }}" // Pega o Id da conversa no chatwoot
+date: "{{ $json.body.data.date_time.replace('Z', '-03:00') }}" // Pega a data da mensagem
+fromMe: "{{ $json.body.data.key.fromMe }}" // Verifica se a mensagem é do agente ou do lead
 ```
 
 ### 2. Registrar Última Mensagem
-Conecte os nós da seção **"Registra última mensagem do lead"** ao seu webhook:
+Conecte os nós da seção **"Registra última mensagem do lead"** ao nó normalizador nessa ordem:
 - `isLead` - Filtra apenas mensagens de leads
 - `ajusta_horário` - Ajusta horário comercial  
-- `last_message` - Salva timestamp no Chatwoot
+- `last_message` - Salva data e hora da mensagem no Chatwoot
 
 ### 3. Isolar Componentes
-Mantenha o registro de mensagens separado do restante do seu workflow para não interferir no fluxo principal.
+Mantenha o registro de mensagens separado do restante do seu workflow para não interferir no fluxo principal. Veja demonstração:
+
+![Arquitetura Registra Mensagem](https://row.viniads.com.br/database/173/table/695/3104/row/9)
 
 ## ❗ Pontos Importantes
 
@@ -218,11 +225,6 @@ Mantenha o registro de mensagens separado do restante do seu workflow para não 
 - ✅ Crie todas as tags necessárias no Chatwoot
 - ✅ Crie o atributo personalizado `last_message`
 - ✅ **REMOVA** o nó `isMe` para funcionar com todos os leads
-
-### 🔒 Segurança
-- Não compartilhe suas API keys
-- Use variáveis de ambiente quando possível
-- Monitore logs de execução regularmente
 
 ### 📊 Performance
 - O workflow filtra automaticamente conversas dos últimos 7 dias
@@ -239,7 +241,7 @@ Mantenha o registro de mensagens separado do restante do seu workflow para não 
 
 ### Tags não estão sendo aplicadas
 1. ✅ Verificar permissões das credenciais do Chatwoot
-2. ✅ Confirmar nomes das tags (case-sensitive)
+2. ✅ Confirmar nomes das tags (maíusculas, minúsculas, organize tudo)
 3. ✅ Validar conexões entre os nós
 
 ### IA não está gerando mensagens
@@ -251,6 +253,7 @@ Mantenha o registro de mensagens separado do restante do seu workflow para não 
 
 Para dúvidas ou problemas:
 - Abra uma [Issue](https://github.com/ViniAdss/chatwoot-n8n-followup-automation/issues) no repositório
+- Entre em contato comigo: adsvinisousa@gmail.com
 - Consulte a documentação do n8n, Chatwoot e Evolution API
 
 ## 🤝 Contribuições
