@@ -1,0 +1,1931 @@
+{
+  "name": "Follow-Up",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        -16
+      ],
+      "id": "c3847d2b-8d20-4f0d-896c-8406e66386c1",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "64e11f4a-6394-4c60-9e77-e4c0225ef55d",
+              "name": "name",
+              "value": "={{ $json.meta.sender.name }}",
+              "type": "string"
+            },
+            {
+              "id": "e0cdab1a-d0bc-446f-8a8e-b03f96a75924",
+              "name": "conversationId",
+              "value": "={{ $json.messages[0].conversation_id }}",
+              "type": "string"
+            },
+            {
+              "id": "795c7278-2728-4f9b-b03e-93f4eba8978f",
+              "name": "phone",
+              "value": "={{ (() => {\n  const phone = $json.meta.sender.phone_number.replace('+', '');\n  return phone.length === 12 ? phone.slice(0, 4) + '9' + phone.slice(4) : phone;\n})() }}",
+              "type": "string"
+            },
+            {
+              "id": "f236f97d-fec0-42c8-9727-47979b28f566",
+              "name": "datetimeNow",
+              "value": "={{ $('Schedule Trigger').item.json.timestamp.toDateTime().format('yyyy-MM-dd HH:mm') }}",
+              "type": "string"
+            },
+            {
+              "id": "11777220-fa0e-492d-a269-6611acd860fd",
+              "name": "last_message",
+              "value": "={{ $json.custom_attributes.last_message.toDateTime().format('yyyy-MM-dd HH:mm') }}",
+              "type": "string"
+            },
+            {
+              "id": "ea0c7cd0-bb3b-4199-9c20-6514b343ab1b",
+              "name": "tags",
+              "value": "={{ $json.labels.toJsonString() }}",
+              "type": "string"
+            },
+            {
+              "id": "86496a0a-27e7-485e-949e-eece7c83694e",
+              "name": "baseUrl",
+              "value": "https://evo.viniads.com.br/",
+              "type": "string"
+            },
+            {
+              "id": "e3a31337-0d41-436c-aa48-a48d03ce9616",
+              "name": "Instance",
+              "value": "ViniAds",
+              "type": "string"
+            },
+            {
+              "id": "c4e0eb7f-06af-4a17-a11d-c770f96a536a",
+              "name": "apikey",
+              "value": "11509D174BDD-49ED-BCE8-7030D0505FCC",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        944,
+        -16
+      ],
+      "id": "b418550c-5d07-474c-b12f-b29fc99c23d9",
+      "name": "normalize"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.all();\n\n// O array de conversas está dentro do primeiro item no campo payload\nconst conversas = input[0].json.payload;\n\n// Calcula o timestamp de 7 dias atrás\nconst seteDiasAtras = new Date();\nseteDiasAtras.setDate(seteDiasAtras.getDate() - 7);\nconst timestampLimite = seteDiasAtras.getTime();\n\n// Filtra as conversas onde o identifier do sender contém \"@s.whatsapp.net\" E a data da última mensagem é de até 7 dias atrás\nconst filtradas = conversas.filter(item => {\n  const identifier = item.meta?.sender?.identifier || '';\n  const lastMessageDate = new Date(item.custom_attributes?.last_message);\n  \n  // A data da mensagem pode estar em formato ISO 8601 (string) ou timestamp (number).\n  // A conversão para `Date` lida com ambos. Se a data for inválida, a condição é falsa.\n  const isRecent = lastMessageDate.getTime() >= timestampLimite;\n  \n  return identifier.includes('@s.whatsapp.net') && isRecent;\n});\n\n// Retorna cada conversa como um item separado, conforme requerido pelo n8n\nreturn filtradas.map(item => ({ json: item }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        -16
+      ],
+      "id": "3d9bc4f3-7086-4dbc-bea8-99845914f3f6",
+      "name": "filtra_numeroPessoal"
+    },
+    {
+      "parameters": {
+        "resource": "Conversations",
+        "operation": "Conversation Filter",
+        "account_id": 1,
+        "payload": "[\n  {\n    \"attribute_key\": \"labels\",\n    \"filter_operator\": \"not_equal_to\",\n    \"values\": [\"no-follow-up\"],\n    \"query_operator\": \"AND\"\n  },\n  {\n    \"attribute_key\": \"inbox_id\",\n    \"filter_operator\": \"equal_to\",\n    \"values\": [8],\n    \"query_operator\": null\n  }\n]",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-chatwoot.chatWoot",
+      "typeVersion": 1,
+      "position": [
+        240,
+        -16
+      ],
+      "id": "6b91eb55-2201-4074-83b7-a945475b848e",
+      "name": "filtra_tag&inbox",
+      "credentials": {
+        "chatwootApi": {
+          "id": "0jH4ryosl3T4DcCV",
+          "name": "ChatWoot User"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "Replace Me",
+      "typeVersion": 1,
+      "position": [
+        5104,
+        848
+      ],
+      "id": "d939c522-28de-411d-b800-cf6fd8c905e0"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1824,
+        0
+      ],
+      "id": "97261815-7bf6-4a92-ab21-47a1e7524e82",
+      "name": "loop_leads"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4d07ace9-888e-4ee2-9154-c775fdc302c1",
+              "leftValue": "={{ $json.phone }}",
+              "rightValue": "=5535998369983",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1520,
+        0
+      ],
+      "id": "d267eac9-8002-4e32-a2e6-48f9f1b763a3",
+      "name": "isMe"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "77961d97-8fad-412e-a2e0-fbb4cf74d3f0",
+              "leftValue": "={{ $json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        352
+      ],
+      "id": "ff7067c2-c91f-488f-9d82-de96f07dd537",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('If').item.json.phone }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        3632,
+        384
+      ],
+      "id": "6b711bfd-246b-468e-8408-7d0a6ea38c67",
+      "name": "histórico",
+      "credentials": {
+        "postgres": {
+          "id": "az2lliQKAm4Dg3n6",
+          "name": "Postgres Vini"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3504,
+        384
+      ],
+      "id": "45b67e5e-2986-4c7f-bb1b-4cda526cefe2",
+      "name": "chat_modell",
+      "credentials": {
+        "openAiApi": {
+          "id": "h7F4JBxqdazrtlUO",
+          "name": "OpenAi Vini"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Filtros\n\nSó retorna as conversas que:\n\n1. Não tem a tag \"no-follow-up\"\n2. São da caixa de entrada do WhatsApp\n\nDeixa passar somente os contatos que possuem **\"@s.whatsapp.net\"**, ou seja, somente números de telefone.\n\n### Coloque suas Credenciais da Evolution\n\n## Crie as Tags no Chatwoot:\n\n![image](https://row.viniads.com.br/media/user_files/8GF1cLZ283L19RondKWnbI1EEI30wEg5_d66b187152e357717d37187816c9fff74e940a257908871606aa13a0bc348a30.png)\n\nNo nó **filtra_tag&inbox**, voce vai colocar o nome da tag que impede o follow-up, no caso desse exemplo é a tag **\"no-follow-up\"**",
+        "height": 864,
+        "width": 720,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        48,
+        -720
+      ],
+      "typeVersion": 1,
+      "id": "516ca555-8484-4f25-bfdc-f6a5e99ce73d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "resource": "Inboxes",
+        "operation": "List All Inboxes",
+        "account_id": 1,
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-chatwoot.chatWoot",
+      "typeVersion": 1,
+      "position": [
+        416,
+        -944
+      ],
+      "id": "b71aa3b7-c723-4b44-a510-d34a41d9ccd1",
+      "name": "caixas_de_entrada",
+      "credentials": {
+        "chatwootApi": {
+          "id": "0jH4ryosl3T4DcCV",
+          "name": "ChatWoot User"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        -944
+      ],
+      "id": "8b7e5373-4491-49c0-b403-09440d24d5bc",
+      "name": "manual"
+    },
+    {
+      "parameters": {
+        "content": "# Controle\n\nEle só deixa passar o número definido nele.\n\nUse esse nó com **seu número de WhatsApp** para fazer os testes da automação\n\nAssim nenhum cliente vai participar das suas execuções de teste.\n\n:warning: Remova esse nó quando for colocar essa automação em produção.",
+        "height": 496,
+        "width": 336,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1392,
+        -352
+      ],
+      "typeVersion": 1,
+      "id": "530457d1-e541-4d65-8d92-1abcdab22932",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Caixas de Entrada\n\nLista todas as caixas de entrada criadas no seu Chatwoot.\n\nExecute esse workflow e procure pela caixa de entrada da evolution. Pegue o id dela para colocar no nó **filtra_tag&inbox**.\n\n![image](https://row.viniads.com.br/media/user_files/FbhLghtct37hLq4c0tMi5JdD8NGgv4gV_a4e15a051654c6963a28475150726b1b66855b8dec8a1a7a95cb3f91eb6a9efe.png)",
+        "height": 688,
+        "width": 704
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        48,
+        -1472
+      ],
+      "typeVersion": 1,
+      "id": "b9014d3a-94e1-4148-900b-f65271479c09",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Agentes\n\nDefina um prompt para cada agente com suas instruções para criar suas mensagens de follow_up personalizadas.\n\nEstes agentes tem acesso ao histórico de conversa através da tool **_histórico_**.\n\nSe não quiser que os agentes tenham acesso ao histórico, desconecte essa tool.",
+        "height": 464,
+        "width": 304,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3504,
+        1072
+      ],
+      "typeVersion": 1,
+      "id": "e3d936e1-a6a8-40d5-8e37-78d768ceaa37",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://woot.viniads.com.br/api/v1/accounts/1/conversations/{{ $json.conversationId }}/custom_attributes",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"custom_attributes\": {\n    \"last_message\": \"{{ $json.date }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        -2112
+      ],
+      "id": "e02d5aa2-0039-423a-8b90-27117dfe32e1",
+      "name": "last_message",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "chatwootApi": {
+          "id": "0jH4ryosl3T4DcCV",
+          "name": "ChatWoot User"
+        },
+        "httpHeaderAuth": {
+          "id": "O9J2MntyyfnQo7td",
+          "name": "Chatwoot Vini"
+        },
+        "httpBearerAuth": {
+          "id": "yhqdJbuBcjye3isv",
+          "name": "Chatwoot Teste"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "# Atributo personalizado no Chatwoot\n\nÉ necessário criar um Atributo Personalizado no seu Chatwoot seguindo o exemplo:\n\n![image](https://row.viniads.com.br/media/user_files/Nw4BTiT4kKenmtJDEITuEjC7vu48lcyO_b6cfc1603c80b743fb282dcc678295fc96782dd2f39de083993e27b7dbb28389.png)",
+        "height": 608,
+        "width": 496,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1216,
+        -2384
+      ],
+      "typeVersion": 1,
+      "id": "0e21b5f1-d062-458e-8f0b-60184b5eb429",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f116eca2-5f49-4a43-9a1c-aceb89415687",
+              "leftValue": "={{ $json.fromMe }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        496,
+        -2112
+      ],
+      "id": "d523a4dc-4afc-4135-b667-215aec169285",
+      "name": "isLead"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "85fa0807-f261-4927-967f-68e7f8f4ad9b",
+              "leftValue": "={{ $json.payload }}",
+              "rightValue": "follow-up-2",
+              "operator": {
+                "type": "array",
+                "operation": "notContains",
+                "rightType": "any"
+              }
+            },
+            {
+              "id": "7b452084-5bf4-4cf3-97f9-ce69694128de",
+              "leftValue": "={{ $json.payload }}",
+              "rightValue": "follow-up-3",
+              "operator": {
+                "type": "array",
+                "operation": "notContains",
+                "rightType": "any"
+              }
+            },
+            {
+              "id": "ab799357-0005-4092-9b94-048d6a87419b",
+              "leftValue": "={{ $json.payload }}",
+              "rightValue": "follow-up-4",
+              "operator": {
+                "type": "array",
+                "operation": "notContains",
+                "rightType": "any"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        3168,
+        32
+      ],
+      "id": "39819125-b075-4980-8d32-f6fc87728352",
+      "name": "primeiro-followup",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8bb2434c-7c6a-4921-bad3-4dbf0b85040b",
+              "leftValue": "={{ $json.payload }}",
+              "rightValue": "follow-up-1",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        3168,
+        208
+      ],
+      "id": "58e0f4b0-8e49-4fec-9f6c-f0b4389b4a37",
+      "name": "segundo-followup",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8bb2434c-7c6a-4921-bad3-4dbf0b85040b",
+              "leftValue": "={{ $json.payload }}",
+              "rightValue": "follow-up-2",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        3168,
+        512
+      ],
+      "id": "fe753440-6b90-4126-baec-47b2fd4d8c19",
+      "name": "terceiro-followup",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8bb2434c-7c6a-4921-bad3-4dbf0b85040b",
+              "leftValue": "={{ $json.payload }}",
+              "rightValue": "follow-up-3",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        3168,
+        688
+      ],
+      "id": "33cc89ae-2c2b-49ad-b470-29f8d7063b84",
+      "name": "quarto-followup",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3168,
+        864
+      ],
+      "id": "15174127-f67c-415a-a4a9-81efd7fc1983",
+      "name": "pass"
+    },
+    {
+      "parameters": {
+        "content": "# Nó \"switch\"\n\nNos nós de filtro, filtramos duas coisas:\n\n1. A data e hora\n2. As Tags\n\n\n### Nó Switch\nNo nó switch temos **quatro rotas**, uma para cada mensagem de follow-up. O nó switch é responsável por **filtrar os leads** de acordo com a **hora da última mensagem** dele. A lógica das rotas é a seguinte:\n\n* **Follou-Up 1**: 10 minutos após a última mensagem.\n* **Follou-Up 2**: 5 horas após a última mensagem.\n* **Follou-Up 3**: 1 dia após a última mensagem.\n* **Follou-Up 4**: 3 dias após a última mensagem.\n\n![image](https://row.viniads.com.br/media/user_files/eV5ygIRb3K5jMTCj7yiZGsMFaxr0Cp1s_b58b2d6477be8802a9f800c6b87e387f915524d93f4dd9f88dc212d86b96ac2a.png)\n\nPara alterar o momento do envio de uma mensagem, voce pode alterar a função ```minus()``` na rota do follow-up que voce deseja alterar. Veja instruções a seguir.\n\n### Alterando o momento  do envio de um follow-up\n\nO valor de cada rota possui uma expressão nesse modelo:\n\n``` {{ $json.datetimeNow.toDateTime().minus(valor, 'unidade de tempo') }} ```\n\nEssa expressão pega data e hora atuais e subtrai pelo valor que voce definiu. Esse valor pode estar em **minutos, horas, dias**, etc(a unidade de tempo deve ser escrita em ingles: minutes, hours, days). Você decide!\n\nSe quiser que a mensagem seja enviada 30 minutos depois da última mensagem do lead, voce deve alterar essa expressão da seguinte maneira:\n\n``` {{ $json.datetimeNow.toDateTime().minus(30, 'minutes') }} ```\n\n\n",
+        "height": 1600,
+        "width": 912,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1968,
+        1072
+      ],
+      "typeVersion": 1,
+      "id": "b7b57b8d-ac01-4ce2-82fb-90a060a02909",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "retorne a frase: \"follow-up-1\"",
+        "options": {
+          "systemMessage": "Retorne somente a frase \"follow-up-1\" no seu output."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        3504,
+        32
+      ],
+      "id": "3f1941c2-c268-4bf6-8afd-07e2d1d582e7",
+      "name": "Agente Follow Up 1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "retorne a frase: \"follow-up-2\"",
+        "options": {
+          "systemMessage": "Retorne somente a frase \"follow-up-2\" no seu output."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        3504,
+        208
+      ],
+      "id": "295738ad-94a8-4938-b33c-1043a450ae2d",
+      "name": "Agente Follow Up 2",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "retorne a frase: \"follow-up-3\"",
+        "options": {
+          "systemMessage": "Retorne somente a frase \"follow-up-3\" no seu output."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        3504,
+        512
+      ],
+      "id": "3b36dbde-af47-43e3-b029-e3ee9b37af1e",
+      "name": "Agente Follow Up 3",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "retorne a frase: \"follow-up-4\"",
+        "options": {
+          "systemMessage": "Retorne somente a frase \"follow-up-4\" no seu output."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        3504,
+        688
+      ],
+      "id": "b46e68cc-79f0-4177-b03e-6236f23cae9b",
+      "name": "Agente Follow Up 4",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1168,
+        0
+      ],
+      "id": "f706e0da-0123-4e30-95fc-7c4a6e174203",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.last_message }}",
+                    "rightValue": "={{ $json.datetimeNow.toDateTime().minus(5, 'minutes') }}",
+                    "operator": {
+                      "type": "dateTime",
+                      "operation": "equals"
+                    },
+                    "id": "72038854-950a-4f76-ad41-a1cb7444ae69"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "fu-1"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ba093609-68ad-40c8-8c28-0d71340a9eeb",
+                    "leftValue": "={{ $json.last_message }}",
+                    "rightValue": "={{ $json.datetimeNow.toDateTime().minus(10, 'minutes') }}",
+                    "operator": {
+                      "type": "dateTime",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "fu-2"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "de0411d7-0feb-47c5-b17d-feec5bac45db",
+                    "leftValue": "={{ $json.last_message }}",
+                    "rightValue": "={{ $json.datetimeNow.toDateTime().minus(30, 'minutes') }}",
+                    "operator": {
+                      "type": "dateTime",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "fu-3"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3790eb95-f8a7-422e-9321-a9ccbf3e0e31",
+                    "leftValue": "={{ $json.last_message }}",
+                    "rightValue": "={{ $json.datetimeNow.toDateTime().minus(1, 'hours') }}",
+                    "operator": {
+                      "type": "dateTime",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "fu-4"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2384,
+        320
+      ],
+      "id": "45f29118-1a38-459a-8c30-82e6deb14b65",
+      "name": "switch"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('If').item.json.baseUrl }}/message/sendText/{{ $('If').item.json.Instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apiKey",
+              "value": "={{ $('If').item.json.apikey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('If').item.json.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Agente Follow Up 2').item.json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4736,
+        208
+      ],
+      "id": "610c8606-0c3a-4ca1-acc8-5df724c99c3e",
+      "name": "Mensagem_2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('If').item.json.baseUrl }}/message/sendText/{{ $('If').item.json.Instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apiKey",
+              "value": "={{ $('If').item.json.apikey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('If').item.json.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Agente Follow Up 1').item.json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4736,
+        32
+      ],
+      "id": "1d7fd317-8a2a-47ad-9390-e32fc14ef2c2",
+      "name": "Mensagem_1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('If').item.json.baseUrl }}/message/sendText/{{ $('If').item.json.Instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apiKey",
+              "value": "={{ $('If').item.json.apikey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('If').item.json.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Agente Follow Up 3').item.json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4736,
+        512
+      ],
+      "id": "34294825-e8df-42e0-8aef-591d8890917b",
+      "name": "Mensagem_3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('If').item.json.baseUrl }}/message/sendText/{{ $('If').item.json.Instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apiKey",
+              "value": "={{ $('If').item.json.apikey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('If').item.json.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Agente Follow Up 4').item.json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4736,
+        688
+      ],
+      "id": "6109d1a7-45d8-4533-98df-1b9ce1f0303c",
+      "name": "Mensagem_4"
+    },
+    {
+      "parameters": {
+        "resource": "Conversation Labels",
+        "operation": "Conversation Add Labels",
+        "account_id": 1,
+        "conversation_id": "={{ $('If').item.json.conversationId }}",
+        "labels": "={{ $json.payload.toJsonString() }}",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-chatwoot.chatWoot",
+      "typeVersion": 1,
+      "position": [
+        4256,
+        32
+      ],
+      "id": "8581e99e-1e41-43ec-8b94-29533f362aa2",
+      "name": "tag_1",
+      "credentials": {
+        "chatwootApi": {
+          "id": "0jH4ryosl3T4DcCV",
+          "name": "ChatWoot User"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Conversation Labels",
+        "operation": "Conversation Add Labels",
+        "account_id": 1,
+        "conversation_id": "={{ $('If').item.json.conversationId }}",
+        "labels": "={{ $json.payload.toJsonString() }}",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-chatwoot.chatWoot",
+      "typeVersion": 1,
+      "position": [
+        4256,
+        208
+      ],
+      "id": "114cf881-ba7b-4df9-ad1e-dbd038fdfb64",
+      "name": "tag_2",
+      "credentials": {
+        "chatwootApi": {
+          "id": "0jH4ryosl3T4DcCV",
+          "name": "ChatWoot User"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Conversation Labels",
+        "operation": "Conversation Add Labels",
+        "account_id": 1,
+        "conversation_id": "={{ $('If').item.json.conversationId }}",
+        "labels": "={{ $json.payload.toJsonString() }}",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-chatwoot.chatWoot",
+      "typeVersion": 1,
+      "position": [
+        4256,
+        512
+      ],
+      "id": "1df97486-6501-48f1-bb97-9a586f59a574",
+      "name": "tag_3",
+      "credentials": {
+        "chatwootApi": {
+          "id": "0jH4ryosl3T4DcCV",
+          "name": "ChatWoot User"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Conversation Labels",
+        "operation": "Conversation Add Labels",
+        "account_id": 1,
+        "conversation_id": "={{ $('If').item.json.conversationId }}",
+        "labels": "={{ $json.payload.toJsonString() }}",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-chatwoot.chatWoot",
+      "typeVersion": 1,
+      "position": [
+        4256,
+        688
+      ],
+      "id": "0b687215-99fa-4555-a409-61a1124de547",
+      "name": "tag_4",
+      "credentials": {
+        "chatwootApi": {
+          "id": "0jH4ryosl3T4DcCV",
+          "name": "ChatWoot User"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('switch').all();\nconst tagsAtuais = input[0].json.payload;\n\n// 🔧 Configure aqui as tags que você quer adicionar ou remover:\nconst tagsParaAdicionar = ['follow-up-1'];  // ✅ Customize aqui\nconst tagsParaRemover = ['']; // ❌ Customize aqui\n\n// Junta as tags existentes com as novas (sem duplicar)\nlet tagsAtualizadas = [...new Set([...tagsAtuais, ...tagsParaAdicionar])];\n\n// Remove as tags indesejadas\ntagsAtualizadas = tagsAtualizadas.filter(tag => !tagsParaRemover.includes(tag));\n\n// Retorna como payload atualizado\nreturn [\n  {\n    json: {\n      payload: tagsAtualizadas\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4064,
+        32
+      ],
+      "id": "d65f9e17-9ec1-47cb-8342-8d938a46dec3",
+      "name": "setTags_1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('switch').all();\nconst tagsAtuais = input[0].json.payload;\n\n// 🔧 Configure aqui as tags que você quer adicionar ou remover:\nconst tagsParaAdicionar = ['follow-up-2']; // ✅ Customize aqui\nconst tagsParaRemover = ['follow-up-1'];  // ❌ Customize aqui\n\n// Junta as tags existentes com as novas (sem duplicar)\nlet tagsAtualizadas = [...new Set([...tagsAtuais, ...tagsParaAdicionar])];\n\n// Remove as tags indesejadas\ntagsAtualizadas = tagsAtualizadas.filter(tag => !tagsParaRemover.includes(tag));\n\n// Retorna como payload atualizado\nreturn [\n  {\n    json: {\n      payload: tagsAtualizadas\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4064,
+        208
+      ],
+      "id": "eb5080c7-8b90-4244-9370-342a1d1109b0",
+      "name": "setTags_2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('switch').all();\nconst tagsAtuais = input[0].json.payload;\n\n// 🔧 Configure aqui as tags que você quer adicionar ou remover:\nconst tagsParaAdicionar = ['follow-up-3'];  // ✅ Customize aqui\nconst tagsParaRemover = ['follow-up-2'];                 // ❌ Customize aqui\n\n// Junta as tags existentes com as novas (sem duplicar)\nlet tagsAtualizadas = [...new Set([...tagsAtuais, ...tagsParaAdicionar])];\n\n// Remove as tags indesejadas\ntagsAtualizadas = tagsAtualizadas.filter(tag => !tagsParaRemover.includes(tag));\n\n// Retorna como payload atualizado\nreturn [\n  {\n    json: {\n      payload: tagsAtualizadas\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4064,
+        512
+      ],
+      "id": "21f850f5-4547-44a9-91b3-a960600d50eb",
+      "name": "setTags_3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('switch').all();\nconst tagsAtuais = input[0].json.payload;\n\n// 🔧 Configure aqui as tags que você quer adicionar ou remover:\nconst tagsParaAdicionar = ['follow-up-4', 'no-follow-up'];  // ✅ Customize aqui\nconst tagsParaRemover = ['follow-up-3'];                 // ❌ Customize aqui\n\n// Junta as tags existentes com as novas (sem duplicar)\nlet tagsAtualizadas = [...new Set([...tagsAtuais, ...tagsParaAdicionar])];\n\n// Remove as tags indesejadas\ntagsAtualizadas = tagsAtualizadas.filter(tag => !tagsParaRemover.includes(tag));\n\n// Retorna como payload atualizado\nreturn [\n  {\n    json: {\n      payload: tagsAtualizadas\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4064,
+        688
+      ],
+      "id": "22d9195b-aa81-48e5-94bd-0b09f0cae2ec",
+      "name": "setTags_4"
+    },
+    {
+      "parameters": {
+        "resource": "Conversation Labels",
+        "operation": "List All Labels Of A Conversation",
+        "account_id": 1,
+        "conversation_id": "={{ $json.conversationId }}",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-chatwoot.chatWoot",
+      "typeVersion": 1,
+      "position": [
+        944,
+        -176
+      ],
+      "id": "d5f18591-e1b8-4f8f-9452-fcb9f4325c48",
+      "name": "getTags",
+      "credentials": {
+        "chatwootApi": {
+          "id": "0jH4ryosl3T4DcCV",
+          "name": "ChatWoot User"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Normalização\n\nEsse conjunto de nós tem as seguintes funções:\n\n1. **Normalizar as informações** que chegam do chatwoot.\n2. **Consultar as tags** associadas a cada conversa.\n3. **Unir essas informações** em um único item para ser enviado ao loop.",
+        "height": 656,
+        "width": 432,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        864,
+        -512
+      ],
+      "typeVersion": 1,
+      "id": "d62ae409-abf0-4ba0-baf1-f7ef6bf94619",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.all();\n\n// Processa cada item do array de entrada\nconst resultado = input.map(item => {\n  // Cria uma cópia do item original para não modificar o objeto original\n  const itemProcessado = { ...item.json };\n  \n  // Extrai a hora diretamente da string ISO para evitar problemas de fuso horário\n  const horaString = itemProcessado.date.split('T')[1]; // Exemplo: \"21:00:48.697-03:00\"\n  const horaAtual = parseInt(horaString.split(':')[0]); // \"21\" Divide a string no \":\" e retorna somente a hora.\n  \n  // Verifica se está no período fora do horário comercial (21h às 06h59)\n  const estaForaHorarioComercial = horaAtual >= 21 || horaAtual < 7;\n  \n  if (estaForaHorarioComercial) {\n    // Extrai a data da string original\n    const parteData = itemProcessado.date.split('T')[0]; // \"2025-08-06\". Pega a string de data e retorna só a data\n    const [ano, mes, dia] = parteData.split('-').map(Number); // [2025, 8, 6]\n    \n    // Cria nova data no mesmo fuso horário\n    const novaData = new Date(ano, mes - 1, dia, 7, 0, 0, 0); // mes-1 porque Date usa 0-11 para meses\n    \n    // Se a hora atual é entre 21h e 23h59, adiciona um dia\n    if (horaAtual >= 21) {\n      novaData.setDate(novaData.getDate() + 1);\n    }\n    \n    // Converte para ISO mantendo o fuso horário original\n    const fusoOriginal = itemProcessado.date.split('T')[1].slice(-6); // \"-03:00\"\n    const isoString = novaData.toISOString();\n    const semFuso = isoString.slice(0, -1); // Remove o 'Z'\n    \n    // Atualiza a data no item processado mantendo o fuso original\n    itemProcessado.date = semFuso + fusoOriginal; // Exemplo \"2025-08-07T07:00:00.000-03:00\"\n  }\n  \n  // Se não está fora do horário comercial, mantém a data original sem alterações\n  \n  return { json: itemProcessado };\n});\n\nreturn resultado;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        -2112
+      ],
+      "id": "5ca3cfca-1df0-4ed1-9a15-86a7d1dd4032",
+      "name": "ajusta_horário"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c8ed9487-fbcd-4160-8a9a-b7436bbb5805",
+              "name": "conversationId",
+              "value": "={{ $json.body.data.chatwootConversationId }}",
+              "type": "string"
+            },
+            {
+              "id": "deb79e24-ecf6-458b-a2e7-e564935d961a",
+              "name": "date",
+              "value": "={{ $json.body.data?.date_time ? $json.body.data.date_time?.replace('Z', '-03:00') : $json.body.date_time.replace('Z', '-03:00')}}",
+              "type": "string"
+            },
+            {
+              "id": "66cfbfa2-22ad-45c7-a711-be4c31f46d5b",
+              "name": "fromMe",
+              "value": "={{ $json.body.data.key.fromMe }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        144,
+        -1840
+      ],
+      "id": "ef9fced4-d442-4aa6-9e07-2d1c7338ee16",
+      "name": "seu-node-de-normalização"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evo/messages-upsert",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        -1840
+      ],
+      "id": "5e852e82-d921-404a-95d8-935dd3cdc562",
+      "name": "seu webhook",
+      "webhookId": "10a7bf6d-4c2f-4829-bcec-ed801e78d32a",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "## Nó de normalização\n\nEm seu nó de normalização, capture as seguintes informações do seu webhook.\n\n\n1. **conversation_id**: id da conversa no chatwoot.\n1. **date**: a data e hora de envio da mensagem\n1. **fromMe**: a variável que diz se a mensagem foi do seu agente ou do lead",
+        "height": 448,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        32,
+        -2112
+      ],
+      "typeVersion": 1,
+      "id": "8f9e27f9-9341-414d-83a5-55cda13b0c3b",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Registra última mensagem do lead\n\n1. **isLead**: só deixa passar quando a mensagem for do Lead.\n1. **ajusta_horário**: ajusta o horário da última mensagem do lead para 07:00 se ele enviar das 21:00 às 06:59 da manhã. Esse ajuste é feito para que o lead não receba mensagens de follow-up em horário de descanso.\n1. **last_message**: registra no chatwoot o horário da última mensagem do lead.\n\n:warning: Deixe essa parte isolada, assim como fiz aqui. O restante do seu workflow fica abaixo, e roda separadamente após o registro da mensagem. ",
+        "height": 448,
+        "width": 736
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        432,
+        -2384
+      ],
+      "typeVersion": 1,
+      "id": "8157a2ae-faf1-4437-9174-7da7e90e8b68",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        496,
+        -1840
+      ],
+      "id": "47a06ae2-18a9-4c6f-8857-5eca9860df9d",
+      "name": "restante do seu workflow"
+    },
+    {
+      "parameters": {
+        "content": "# Filtros de Tag\n\nLogo a frente do nó switch tem os nós que filtram as os leads pelas **tags**. Isso para garantir que a pessoa receba a mensagem correta de follow-up, e não fique em um loop infinito recebendo a mesma mensagem.\n\nO primeiro filtro tem mais tags, para garantir que só vai receber o primeiro follow-up o lead que se encontra em uma das duas condições abaixo:\n\n1. É um **_lead novo_** que não recebeu uma mensagem de follow-up ainda.\n2. Já recebeu a primeira mensagem de follow-up, mas **_ainda não recebeu a segunda_**(_essa regra assegura que a pessoa continue recebendo a primeira mensagem de follow-up 10 minutos após sua última mensagem, desde que ainda não tenha recebido a segunda mensagem de follow-up_).\n\n:warning: Garanta que as tags criadas no seu chatwoot tenham os mesmo nomes das tags usadas nos nós de filtro!",
+        "height": 592,
+        "width": 512,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2944,
+        1072
+      ],
+      "typeVersion": 1,
+      "id": "46a938ee-28b5-47df-8fa5-7274f486a7e9",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "content": "## Ajusta Tags\n\nEstes dois nós tem a função de ajustar as tags no Chatwoot.\n\n* setTags: Nesse nós voce define qual tags voce quer adicionar e quais quer remover.\n* tag: Nesse nó você pega as  tags geradas pelo nó anterior e atualiza o lead no Chatwoot.\n\nCada **_setTag_** tem uma área onde voce pode definir as tagas que deseja remover ou adicionar. \n\nVeja no exemplo do nó **_setTags_2_** a linha do código onde você pode alterar as tags :\n\n```\n// 🔧 Configure aqui as tags que você quer adicionar ou remover:\nconst tagsParaAdicionar = ['follow-up-2']; // ✅ Customize aqui\nconst tagsParaRemover = ['follow-up-1'];  // ❌ Customize aqui\n```\n\nAbrindo o nó, você vai ver que o código tem instruções para cada etapa.",
+        "height": 464,
+        "width": 704,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3904,
+        1072
+      ],
+      "typeVersion": 1,
+      "id": "ce54b02d-2336-428d-b2be-df4b579c6d9d",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "# Configurando os nós no workflow do seu agente\n\nEssa seção demonstra como você deve configurar os nós no seu workflow principal, onde fica seu agente de atendimento.\n\nO objetivo aqui é criar um mecanismo para **registrar a data e a hora da última mensagem** do lead.\n\nPara isso voce irá precisar:\n\n1. Ajustar o nó de normalização que coleta os dados do seu webhook. Adicione as informações do nó **_seu-node-de-normalização_** no seu.\n2. Criar o atributo personalizado **_last_message_** no seu Chatwoot.\n3. Copiar esses três nós da seção \"_Registra última mensagem do lead_\" e colocar no seu fluxo, conforme mostrado aqui.\n\n:white_check_mark: Perceba que esses três nós estão conectados apenas ao nó de normalização, então ela não irá afetar o restante do seu workflow.\n\n:warning: Não se esqueça de criar o atributo personalizado chamado **_last_message_** no seu Chatwoot",
+        "height": 1248,
+        "width": 2048,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -272,
+        -2784
+      ],
+      "typeVersion": 1,
+      "id": "16e3228e-9b4c-406a-99d2-f4050edc090c",
+      "name": "Sticky Note11"
+    }
+  ],
+  "pinData": {
+    "Schedule Trigger": [
+      {
+        "json": {
+          "timestamp": "2025-08-06T16:45:20.003-03:00",
+          "Readable date": "August 6th 2025, 4:45:20 pm",
+          "Readable time": "4:45:20 pm",
+          "Day of week": "Wednesday",
+          "Year": "2025",
+          "Month": "August",
+          "Day of month": "06",
+          "Hour": "16",
+          "Minute": "45",
+          "Second": "20",
+          "Timezone": "America/Sao_Paulo (UTC-03:00)"
+        }
+      }
+    ],
+    "seu webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "webhooks.viniads.com.br",
+            "user-agent": "axios/1.7.9",
+            "content-length": "1019",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "content-type": "application/json",
+            "x-forwarded-for": "172.18.0.1",
+            "x-forwarded-host": "webhooks.viniads.com.br",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "cdf85c644557",
+            "x-real-ip": "172.18.0.1"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "event": "messages.upsert",
+            "instance": "ViniAds",
+            "data": {
+              "key": {
+                "remoteJid": "553598369983@s.whatsapp.net",
+                "fromMe": false,
+                "id": "3EB0DDD5B6B8689E7D7C9B"
+              },
+              "pushName": "vinicius sousa",
+              "status": "DELIVERY_ACK",
+              "message": {
+                "conversation": "Opa, fazendo um teste aqui",
+                "messageContextInfo": {
+                  "deviceListMetadata": {
+                    "senderKeyHash": "fmGOfcthBXDuVw==",
+                    "senderTimestamp": "1753726361",
+                    "senderAccountType": "E2EE",
+                    "receiverAccountType": "E2EE",
+                    "recipientKeyHash": "bFomgi7CrPLcug==",
+                    "recipientTimestamp": "1753798443"
+                  },
+                  "deviceListMetadataVersion": 2,
+                  "messageSecret": "Hd7EcTJ7j9u2IooZ9c8P/S7NY2JUUNoDtfkF5f9y1a0="
+                }
+              },
+              "messageType": "conversation",
+              "messageTimestamp": 1754402448,
+              "instanceId": "0e32c036-1b63-4b74-ace4-07242c9c22d0",
+              "source": "web",
+              "chatwootMessageId": 710,
+              "chatwootInboxId": 8,
+              "chatwootConversationId": 304
+            },
+            "destination": "https://webhooks.viniads.com.br/webhook/evo",
+            "date_time": "2025-08-06T06:30:48.697Z",
+            "sender": "559182824185@s.whatsapp.net",
+            "server_url": "https://evo.viniads.com.br",
+            "apikey": "11509D174BDD-49ED-BCE8-7030D0505FCC"
+          },
+          "webhookUrl": "https://webhooks.viniads.com.br/webhook/evo/messages-upsert",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "filtra_tag&inbox",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filtra_numeroPessoal": {
+      "main": [
+        [
+          {
+            "node": "normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filtra_tag&inbox": {
+      "main": [
+        [
+          {
+            "node": "filtra_numeroPessoal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "normalize": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "getTags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace Me": {
+      "main": [
+        [
+          {
+            "node": "loop_leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "loop_leads": {
+      "main": [
+        [],
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "isMe": {
+      "main": [
+        [
+          {
+            "node": "loop_leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "pass",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "switch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "loop_leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "histórico": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente Follow Up 1",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "Agente Follow Up 2",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "Agente Follow Up 3",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "Agente Follow Up 4",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chat_modell": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Follow Up 1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agente Follow Up 2",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agente Follow Up 3",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agente Follow Up 4",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "caixas_de_entrada": {
+      "main": [
+        []
+      ]
+    },
+    "manual": {
+      "main": [
+        [
+          {
+            "node": "caixas_de_entrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "isLead": {
+      "main": [
+        [
+          {
+            "node": "ajusta_horário",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "primeiro-followup": {
+      "main": [
+        [
+          {
+            "node": "Agente Follow Up 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "segundo-followup": {
+      "main": [
+        [
+          {
+            "node": "Agente Follow Up 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "terceiro-followup": {
+      "main": [
+        [
+          {
+            "node": "Agente Follow Up 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "quarto-followup": {
+      "main": [
+        [
+          {
+            "node": "Agente Follow Up 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pass": {
+      "main": [
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Follow Up 1": {
+      "main": [
+        [
+          {
+            "node": "setTags_1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Follow Up 2": {
+      "main": [
+        [
+          {
+            "node": "setTags_2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Follow Up 3": {
+      "main": [
+        [
+          {
+            "node": "setTags_3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Follow Up 4": {
+      "main": [
+        [
+          {
+            "node": "setTags_4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "isMe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "switch": {
+      "main": [
+        [
+          {
+            "node": "primeiro-followup",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "segundo-followup",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "terceiro-followup",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "quarto-followup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem_2": {
+      "main": [
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem_1": {
+      "main": [
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem_3": {
+      "main": [
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem_4": {
+      "main": [
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tag_1": {
+      "main": [
+        [
+          {
+            "node": "Mensagem_1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tag_2": {
+      "main": [
+        [
+          {
+            "node": "Mensagem_2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tag_3": {
+      "main": [
+        [
+          {
+            "node": "Mensagem_3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tag_4": {
+      "main": [
+        [
+          {
+            "node": "Mensagem_4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "setTags_1": {
+      "main": [
+        [
+          {
+            "node": "tag_1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "setTags_2": {
+      "main": [
+        [
+          {
+            "node": "tag_2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "setTags_3": {
+      "main": [
+        [
+          {
+            "node": "tag_3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "setTags_4": {
+      "main": [
+        [
+          {
+            "node": "tag_4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getTags": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "ajusta_horário": {
+      "main": [
+        [
+          {
+            "node": "last_message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "seu-node-de-normalização": {
+      "main": [
+        [
+          {
+            "node": "isLead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "restante do seu workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "seu webhook": {
+      "main": [
+        [
+          {
+            "node": "seu-node-de-normalização",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1320e4ca-04a3-4b0a-99c1-58f327c6d8b0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "99fad291a5fe401d501e4f538a199fb57b08c7e3ec314354326b3244a970e2a7"
+  },
+  "id": "NgVPJYtd2j9Br9Wg",
+  "tags": []
+}
