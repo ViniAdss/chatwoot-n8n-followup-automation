@@ -197,7 +197,7 @@ graph TD
 
 Para integrar com seu workflow de atendimento existente:
 
-### 1. Modificar Webhook
+### 1. Modificar o nó Normalizador
 Adicione ao seu nó de normalização:
 ```javascript
 // Campos obrigatórios para o follow-up
@@ -215,7 +215,7 @@ Conecte os nós da seção **"Registra última mensagem do lead"** ao nó normal
 ### 3. Isolar Componentes
 Mantenha o registro de mensagens separado do restante do seu workflow para não interferir no fluxo principal. Veja demonstração:
 
-![Arquitetura Registra Mensagem](https://row.viniads.com.br/database/173/table/695/3104/row/9)
+![Arquitetura Registra Mensagem]([https://row.viniads.com.br/database/173/table/695/3104/row/9](https://row.viniads.com.br/media/user_files/uWzE6RACRsy7jfV448cmJFcyKXksT4Yi_a5052aaf52bb94a493c62ef59530734a75cf1f2144bc38327ba468fdb43e7f88.png))
 
 ## ❗ Pontos Importantes
 
